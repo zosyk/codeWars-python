@@ -1,57 +1,43 @@
-HIGHER_OPERATIONS = ["*", "/"]
-OPERATIONS = ["+", "-"] + HIGHER_OPERATIONS
+import re
+from operator import mul, truediv as div, add, sub
+
+OPS = {'*': mul, '/': div, '-': sub, '+': add}
 
 
 def calc(expression):
-    return calc_helper(expression.replace(" ", ""))
+    tokens = re.findall(r'[.\d]+|[()+*/-]', expression)
+    return parse_add_sub(tokens, 0)[0]
 
 
-def calc_helper(expression):
-    openIdx, closeIdx, openCount, closeCount = 0, 0, 0, 0
-    i = 0
-    while i < len(expression):
-        symbol = expression[i]
-        if symbol == "(":
-            if openCount == 0:
-                openIdx = i
-            openCount += 1
-        elif symbol == ")":
-            closeCount += 1
-            if closeCount == openCount:
-                openCount, closeCount = 0, 0
-                closeIdx = i
-                i = openIdx
-                subExpr = expression[openIdx: closeIdx + 1]
-                expression = expression.replace(subExpr, str(calc(subExpr[1:][:-1])), 1)
-        i += 1
-    expression = expression.replace("--", "+")
-    operations = []
-    numbers = []
+def parse_add_sub(tokens, index):
+    value, index = parse_mul_div(tokens, index)
+    while index < len(tokens) and tokens[index] != ")":
+        token = tokens[index]
+        if token in "-+":
+            value2, index = parse_mul_div(tokens, index + 1)
+            value = OPS[token](value, value2)
+    return value, index
 
-    start = 0
-    for i in range(len(expression)):
-        symbol = expression[i]
-        if symbol in OPERATIONS and i - start > 0:
-            numbers.append(float(expression[start:i]))
-            operations.append(symbol)
-            start = i + 1
-    numbers.append(float(expression[start:]))
 
-    while len(operations) != 0:
-        shift = 0
-        if len(operations) > 1 and operations[0] not in HIGHER_OPERATIONS and operations[1] in HIGHER_OPERATIONS:
-            shift = 1
-        operation = operations.pop(shift)
-        num1 = numbers.pop(shift)
-        num2 = numbers.pop(shift)
+def parse_mul_div(tokens, index):
+    value, index = parse_parentheses_minus(tokens, index)
+    while index < len(tokens) and tokens[index] in "*/":
+        token = tokens[index]
+        value2, index = parse_parentheses_minus(tokens, index + 1)
+        value = OPS[token](value, value2)
 
-        if operation == "-":
-            numbers.insert(shift, num1 - num2)
-        elif operation == "+":
-            numbers.insert(shift, num1 + num2)
-        elif operation == "*":
-            numbers.insert(shift, num1 * num2)
-        elif operation == "/":
-            numbers.insert(shift, num1 / num2)
+    return value, index
 
-    return numbers.pop()
+
+def parse_parentheses_minus(tokens, index):
+    token = tokens[index]
+
+    if token == "(":
+        value, index = parse_add_sub(tokens, index + 1)
+    elif token == "-":
+        value, index = parse_parentheses_minus(tokens, index + 1)
+        value, index = - value, index - 1
+    else:
+        value = float(token)
+
+    return value, index + 1
