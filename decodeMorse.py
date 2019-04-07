@@ -3,29 +3,8 @@ import re
 def decodeBits(bits):
     bits = bits.strip('0')
     transmission_rate = min(len(m) for m in re.findall(r'1+|0+', bits))
-    morse_code = []
-    index = 0
-    while index < len(bits):
-        bit = bits[index]
-        if bit == '1':
-            next_index = bits.find('0', index)
-            if next_index < 0:
-                next_index = len(bits)
-            if next_index - index == transmission_rate:
-                morse_code.append('.')
-            else:
-                morse_code.append('-')
-        else:
-            next_index = bits.find('1', index)
-            if next_index < 0:
-                next_index = len(bits)
-            if next_index - index == transmission_rate * 3:
-                morse_code.append(' ')
-            elif next_index - index == transmission_rate * 7:
-                morse_code.append('   ')
-        index = next_index
 
-    return ''.join(morse_code)
+    return bits[::transmission_rate].replace('111', '-').replace('1', '.').replace('0000000', '   ').replace('000', ' ').replace('0', '')
 
 
 def decodeMorse(morseCode):
