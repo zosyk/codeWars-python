@@ -1,11 +1,35 @@
-def decodeMorse(morse_code):
-    morse_code_words = morse_code.strip().split('   ')
-    words = []
-    for m_word in morse_code_words:
-        m_letters = m_word.split(' ')
-        words += [''.join(MORSE_CODE[m_letter] for m_letter in m_letters)]
+import re
 
-    return ' '.join(words)
+def decodeBits(bits):
+    bits = bits.strip('0')
+    transmission_rate = min(len(m) for m in re.findall(r'1+|0+', bits))
+    morse_code = []
+    index = 0
+    while index < len(bits):
+        bit = bits[index]
+        if bit == '1':
+            next_index = bits.find('0', index)
+            if next_index < 0:
+                next_index = len(bits)
+            if next_index - index == transmission_rate:
+                morse_code.append('.')
+            else:
+                morse_code.append('-')
+        else:
+            next_index = bits.find('1', index)
+            if next_index < 0:
+                next_index = len(bits)
+            if next_index - index == transmission_rate * 3:
+                morse_code.append(' ')
+            elif next_index - index == transmission_rate * 7:
+                morse_code.append('   ')
+        index = next_index
+
+    return ''.join(morse_code)
+
+
+def decodeMorse(morseCode):
+    return ' '.join(''.join(MORSE_CODE[l] for l in w.split()) for w in morseCode.split('   '))
 
 
 MORSE_CODE = {'.-...': '&',
